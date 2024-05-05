@@ -11,7 +11,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Sun representation
-const sunGeometry = new THREE.SphereGeometry(5, 32, 32); // Adjust size as necessary
+const sunGeometry = new THREE.SphereGeometry(1, 6.4, 6.4); // Adjust size as necessary
 const sunMaterial = new THREE.MeshBasicMaterial({
     emissive: 0xffff00, // Bright yellow
     emissiveIntensity: 1
@@ -24,137 +24,55 @@ const sunlight = new THREE.PointLight(0xffffff, 1.5, 5000);
 sunMesh.add(sunlight); // Ensures the light emanates from the center of the Sun mesh
 
 // Ambient light
-const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+const ambientLight = new THREE.AmbientLight(0x404040, 5);
 scene.add(ambientLight);
-// Helper function to load textures
-function loadTexture(planetName, baseFilename) {
-    return new THREE.TextureLoader().load(`textures/${baseFilename}`);
+
+// Load texture function
+function loadTexture(planetName) {
+    return new THREE.TextureLoader().load(`textures/${planetName}.jpg`);
 }
 
-const solarSystemData = {
-  "planets": [
-      {
-          "name": "Mercury",
-          "diameter": 4879, // kilometers
-          "distanceFromParent": 57900000, // kilometers
-          "orbitalPeriod": 88, // days
-          "_3d": {
-              "textures": {
-                  "base": "mercury.jpg"
-              }
-          }
-      },
-      {
-          "name": "Venus",
-          "diameter": 12104,
-          "distanceFromParent": 108200000,
-          "orbitalPeriod": 224.7,
-          "_3d": {
-              "textures": {
-                  "base": "venus.png"
-              }
-          }
-      },
-      {
-          "name": "Earth",
-          "diameter": 12756,
-          "distanceFromParent": 149600000,
-          "orbitalPeriod": 365.25,
-          "_3d": {
-              "textures": {
-                  "base": "earth.jpg"
-              }
-          }
-      },
-      {
-          "name": "Mars",
-          "diameter": 6792,
-          "distanceFromParent": 227900000,
-          "orbitalPeriod": 687,
-          "_3d": {
-              "textures": {
-                  "base": "mars.jpg"
-              }
-          }
-      },
-      {
-          "name": "Jupiter",
-          "diameter": 142984,
-          "distanceFromParent": 778600000,
-          "orbitalPeriod": 4331,
-          "_3d": {
-              "textures": {
-                  "base": "jupiter.jpg"
-              }
-          }
-      },
-      {
-          "name": "Saturn",
-          "diameter": 120536,
-          "distanceFromParent": 1433500000,
-          "orbitalPeriod": 10747,
-          "_3d": {
-              "textures": {
-                  "base": "saturn.jpg"
-              }
-          }
-      },
-      {
-          "name": "Uranus",
-          "diameter": 51118,
-          "distanceFromParent": 2872500000,
-          "orbitalPeriod": 30589,
-          "_3d": {
-              "textures": {
-                  "base": "uranus.jpg"
-              }
-          }
-      },
-      {
-          "name": "Neptune",
-          "diameter": 49528,
-          "distanceFromParent": 4495100000,
-          "orbitalPeriod": 59800,
-          "_3d": {
-              "textures": {
-                  "base": "neptune.jpg"
-              }
-          }
-      },
-  ]
-};
+// Planetary data and creation
+const planets = [
+    { name: 'Mercury', diameter: 0.383, distance: 0.39, orbitalSpeed: 0.0001 },
+    //{ name: 'Venus', diameter: 0.949, distance: 0.72, orbitalSpeed: 0.00008 },
+    { name: 'Earth', diameter: 1, distance: 1, orbitalSpeed: 0.00007 },
+    { name: 'Mars', diameter: 0.532, distance: 1.52, orbitalSpeed: 0.00006 },
+    { name: 'Jupiter', diameter: 11.21, distance: 5.2, orbitalSpeed: 0.00005 },
+    { name: 'Saturn', diameter: 9.45, distance: 9.58, orbitalSpeed: 0.00004 },
+    { name: 'Uranus', diameter: 4.01, distance: 19.22, orbitalSpeed: 0.00003 },
+    { name: 'Neptune', diameter: 3.88, distance: 30.05, orbitalSpeed: 0.00002 }
+];
 
-const distanceScale = 1 / 149597870.7; // AU to units
-const sizeScale = 1; // Size scaling for visibility
+const sizeScale = 1; // Adjust as needed
+const distanceScale = 5; // Adjust as needed for visibility
 
-solarSystemData.planets.forEach(planet => {
-    const geometry = new THREE.SphereGeometry((planet.diameter / 12756) * sizeScale, 32, 32);
+planets.forEach(planet => {
+    const geometry = new THREE.SphereGeometry(planet.diameter * sizeScale, 32, 32);
     const material = new THREE.MeshPhongMaterial({
-        map: loadTexture(planet.name, planet._3d.textures.base)
+        map: loadTexture(planet.name)
     });
     const planetMesh = new THREE.Mesh(geometry, material);
-    planetMesh.position.x = planet.distanceFromParent * distanceScale;
+    planetMesh.position.x = planet.distance * distanceScale; // Positioning planets
     scene.add(planetMesh);
 
-    // Animation function for the planet
-    const orbitSpeed = 0.1 / planet.orbitalPeriod; // Simplified orbit speed
+    // Simple orbit animation
     function animatePlanet() {
         requestAnimationFrame(animatePlanet);
-        planetMesh.position.x = Math.cos(Date.now() * orbitSpeed) * planet.distanceFromParent * distanceScale;
-        planetMesh.position.z = Math.sin(Date.now() * orbitSpeed) * planet.distanceFromParent * distanceScale;
+        planetMesh.position.x = Math.cos(Date.now() * planet.orbitalSpeed) * planet.distance * distanceScale;
+        planetMesh.position.z = Math.sin(Date.now() * planet.orbitalSpeed) * planet.distance * distanceScale;
     }
     animatePlanet();
 });
 
-// Controls for interaction
+// Controls for interactive camera movement
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.minDistance = 0;
-controls.maxDistance = 150000;
+controls.maxDistance = 15000;
 
-// Animation loop for rendering
+// Rendering loop
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
 animate();
-
