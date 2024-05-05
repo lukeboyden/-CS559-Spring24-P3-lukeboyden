@@ -11,7 +11,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Sun representation
-const sunGeometry = new THREE.SphereGeometry(1, 6.4, 6.4); // Adjust size as necessary
+const sunGeometry = new THREE.SphereGeometry(5, 23, 23); // Adjust size as necessary
 const sunMaterial = new THREE.MeshBasicMaterial({
     emissive: 0xffff00, // Bright yellow
     emissiveIntensity: 1
@@ -34,18 +34,18 @@ function loadTexture(planetName) {
 
 // Planetary data and creation
 const planets = [
-    { name: 'Mercury', diameter: 0.383, distance: 0.39, orbitalSpeed: 0.0001 },
-    //{ name: 'Venus', diameter: 0.949, distance: 0.72, orbitalSpeed: 0.00008 },
-    { name: 'Earth', diameter: 1, distance: 1, orbitalSpeed: 0.00007 },
-    { name: 'Mars', diameter: 0.532, distance: 1.52, orbitalSpeed: 0.00006 },
-    { name: 'Jupiter', diameter: 11.21, distance: 5.2, orbitalSpeed: 0.00005 },
-    { name: 'Saturn', diameter: 9.45, distance: 9.58, orbitalSpeed: 0.00004 },
-    { name: 'Uranus', diameter: 4.01, distance: 19.22, orbitalSpeed: 0.00003 },
-    { name: 'Neptune', diameter: 3.88, distance: 30.05, orbitalSpeed: 0.00002 }
+  { name: 'Mercury', diameter: 0.383, distance: 0.39, orbitalSpeed: 0.0001 },
+  { name: 'Venus', diameter: 0.949, distance: 0.72, orbitalSpeed: 0.00008 },
+  { name: 'Earth', diameter: 1, distance: 1, orbitalSpeed: 0.00007 },
+  { name: 'Mars', diameter: 0.532, distance: 1.52, orbitalSpeed: 0.00006 },
+  { name: 'Jupiter', diameter: 11.21, distance: 5.2, orbitalSpeed: 0.00005 },
+  { name: 'Saturn', diameter: 9.45, distance: 9.58, orbitalSpeed: 0.00004 },
+  { name: 'Uranus', diameter: 4.01, distance: 19.22, orbitalSpeed: 0.00003 },
+  { name: 'Neptune', diameter: 3.88, distance: 30.05, orbitalSpeed: 0.00002 }
 ];
 
-const sizeScale = 1; // Adjust as needed
-const distanceScale = 5; // Adjust as needed for visibility
+const sizeScale = 5; // Adjust as needed
+const distanceScale = 50; // Adjust as needed for visibility
 
 planets.forEach(planet => {
     const geometry = new THREE.SphereGeometry(planet.diameter * sizeScale, 32, 32);
