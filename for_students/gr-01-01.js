@@ -2,6 +2,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../libs/CS559-Three/examples/jsm/controls/OrbitControls.js';
 
+const infoElement = document.createElement('div');
+infoElement.id = 'infoCard';  // Use the new CSS styles
+document.body.appendChild(infoElement);
+
 // Scene, camera, and renderer setup
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1e8);
@@ -15,12 +19,15 @@ document.body.appendChild(renderer.domElement);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // Soft white light
 scene.add(ambientLight);
 
+const celestialBodies = []; // Array to hold all celestial bodies for raycasting
+
 // Sun setup
 const sunGeometry = new THREE.SphereGeometry(696340 / 12756 / 20, 64, 64); // Scale sun radius against Earth's radius
 const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, emissive: 0xffff00 });
 const sun = new THREE.Mesh(sunGeometry, sunMaterial);
 sun.name = "Sun"; // Setting the name for the Sun
 scene.add(sun);
+celestialBodies.push(sun); // Add Sun to the celestial bodies array
 
 // Sunlight as a point light
 const pointLight = new THREE.PointLight(0xffffff, 1.5, 0);
@@ -33,8 +40,61 @@ const loadTexture = path => new THREE.TextureLoader().load(path);
 const astronomicalUnit = 149597870.7; // in thousands of kilometers
 const scaleDistance = distance => (distance / astronomicalUnit) * 10; // scale factor for scene size
 
+// Planetary data
+const planetsData = [
+    { name: "Mercury", diameter: 4879, distance: 57900000, orbitalSpeed: 0.00474, texture: "textures/mercury.jpg" },
+    { name: "Venus", diameter: 12104, distance: 108200000, orbitalSpeed: 0.00350, texture: "textures/venus.jpg" },
+    { name: "Earth", diameter: 12756, distance: 149600000, orbitalSpeed: 0.00298, texture: "textures/earth.jpg" },
+    { name: "Mars", diameter: 6792, distance: 227900000, orbitalSpeed: 0.00241, texture: "textures/mars.jpg" },
+    { name: "Jupiter", diameter: 142984 / 3, distance: 778600000, orbitalSpeed: 0.00131, texture: "textures/jupiter.jpg" },
+    { name: "Saturn", diameter: 120536 / 3, distance: 1433500000, orbitalSpeed: 0.00097, texture: "textures/saturn.jpg" },
+    { name: "Uranus", diameter: 51118, distance: 2872500000, orbitalSpeed: 0.00068, texture: "textures/uranus.jpg" },
+    { name: "Neptune", diameter: 49528, distance: 4495100000, orbitalSpeed: 0.00054, texture: "textures/neptune.jpg" }
+];
+
+// Create planets and add them to interactiveObjects
+planetsData.forEach(planet => {
+    const geometry = new THREE.SphereGeometry(planet.diameter / 12756 * 0.5, 32, 32); // Scale planets
+    const material = new THREE.MeshPhongMaterial({
+        map: loadTexture(planet.texture)
+    });
+    const planetMesh = new THREE.Mesh(geometry, material);
+    planetMesh.name = planet.name;  // Important for identification in raycaster
+    planetMesh.position.x = scaleDistance(planet.distance); // Position planets
+    scene.add(planetMesh);
+    celestialBodies.push(planetMesh); // Add each planet to the celestial bodies array
+
+    // Orbital motion
+    function animatePlanet() {
+        requestAnimationFrame(animatePlanet);
+        planetMesh.rotation.y += 0.001; // Axial rotation
+        planetMesh.position.x = Math.cos(Date.now() * 0.0001 * planet.orbitalSpeed) * scaleDistance(planet.distance);
+        planetMesh.position.z = Math.sin(Date.now() * 0.0001 * planet.orbitalSpeed) * scaleDistance(planet.distance);
+    }
+    animatePlanet();
+});
+// Controls for user interaction
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+
+// Function to update planetary positions for orbits
+function updatePlanetaryOrbits() {
+  const currentTime = Date.now() * 0.0001;  // Current time factor for animation speed
+
+  planetsData.forEach((planet, index) => {
+      const planetMesh = scene.children.find(obj => obj.name === planet.name);
+      if (planetMesh) {
+          // Circular orbit calculation
+          planetMesh.position.x = Math.cos(currentTime * planet.orbitalSpeed) * scaleDistance(planet.distance);
+          planetMesh.position.z = Math.sin(currentTime * planet.orbitalSpeed) * scaleDistance(planet.distance);
+      }
+  });
+}
+
+
 // HTML element for displaying information
-const infoElement = document.createElement('div');
+//const infoElement = document.createElement('div');
 infoElement.style.position = 'absolute';
 infoElement.style.top = '10px';
 infoElement.style.left = '10px';
@@ -45,35 +105,6 @@ infoElement.style.padding = '10px';
 infoElement.style.display = 'none';
 document.body.appendChild(infoElement);
 
-// Prepare raycaster and mouse vector
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-
-// Function to handle mouse movement
-function onMouseMove(event) {
-    // Convert mouse position to normalized device coordinates (-1 to +1) for both components
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    // Update the picking ray with the camera and mouse position
-    raycaster.setFromCamera(mouse, camera);
-
-    // Calculate objects intersecting the picking ray
-    const intersects = raycaster.intersectObjects(scene.children, true);
-
-    if (intersects.length > 0) {
-        const object = intersects[0].object;
-
-        // Display the information based on the object's name
-        infoElement.innerHTML = getDescription(object.name);
-        infoElement.style.display = 'block';
-    } else {
-        infoElement.style.display = 'none';
-    }
-}
-
-// Add event listener to detect mouse movement
-window.addEventListener('mousemove', onMouseMove);
 
 // Descriptions for celestial bodies
 function getDescription(name) {
@@ -101,63 +132,49 @@ function getDescription(name) {
     }
 }
 
-// Planetary data
-const planetsData = [
-    { name: "Mercury", diameter: 4879, distance: 57900000, orbitalSpeed: 0.00474, texture: "textures/mercury.jpg" },
-    { name: "Venus", diameter: 12104, distance: 108200000, orbitalSpeed: 0.00350, texture: "textures/venus.jpg" },
-    { name: "Earth", diameter: 12756, distance: 149600000, orbitalSpeed: 0.00298, texture: "textures/earth.jpg" },
-    { name: "Mars", diameter: 6792, distance: 227900000, orbitalSpeed: 0.00241, texture: "textures/mars.jpg" },
-    { name: "Jupiter", diameter: 142984 / 3, distance: 778600000, orbitalSpeed: 0.00131, texture: "textures/jupiter.jpg" },
-    { name: "Saturn", diameter: 120536 / 3, distance: 1433500000, orbitalSpeed: 0.00097, texture: "textures/saturn.jpg" },
-    { name: "Uranus", diameter: 51118, distance: 2872500000, orbitalSpeed: 0.00068, texture: "textures/uranus.jpg" },
-    { name: "Neptune", diameter: 49528, distance: 4495100000, orbitalSpeed: 0.00054, texture: "textures/neptune.jpg" }
-];
+// Raycaster setup
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
 
-// Create planets
-planetsData.forEach(planet => {
-    const geometry = new THREE.SphereGeometry(planet.diameter / 12756 * 0.5, 32, 32); // Scale planets
-    const material = new THREE.MeshPhongMaterial({
-        map: loadTexture(planet.texture)
-    });
-    const planetMesh = new THREE.Mesh(geometry, material);
-    planetMesh.position.x = scaleDistance(planet.distance); // Position planets
-    scene.add(planetMesh);
+function onMouseClick(event) {
+  // Update the mouse position with the normalized coordinates of the mouse position
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-    // Orbital motion
-    function animatePlanet() {
-        requestAnimationFrame(animatePlanet);
-        planetMesh.rotation.y += 0.001; // Axial rotation
-        planetMesh.position.x = Math.cos(Date.now() * 0.0001 * planet.orbitalSpeed) * scaleDistance(planet.distance);
-        planetMesh.position.z = Math.sin(Date.now() * 0.0001 * planet.orbitalSpeed) * scaleDistance(planet.distance);
-    }
-    animatePlanet();
-});
+  // Update the picking ray with the camera and mouse position
+  raycaster.setFromCamera(mouse, camera);
 
-// Controls for user interaction
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
+  // Calculate objects intersecting the picking ray
+  const intersects = raycaster.intersectObjects(celestialBodies);
 
-// Function to update planetary positions for orbits
-function updatePlanetaryOrbits() {
-  const currentTime = Date.now() * 0.0001;  // Current time factor for animation speed
+  // Iterate through the array of intersected objects
+  for (let i = 0; i < intersects.length; i++) {
+      const intersectedObject = intersects[i].object;
 
-  planetsData.forEach((planet, index) => {
-      const planetMesh = scene.children.find(obj => obj.name === planet.name);
-      if (planetMesh) {
-          // Circular orbit calculation
-          planetMesh.position.x = Math.cos(currentTime * planet.orbitalSpeed) * scaleDistance(planet.distance);
-          planetMesh.position.z = Math.sin(currentTime * planet.orbitalSpeed) * scaleDistance(planet.distance);
+      // Display the information box if a celestial body is clicked
+      if (intersectedObject) {
+          const infoText = getDescription(intersectedObject.name);
+          infoElement.innerHTML = `<strong>${intersectedObject.name}</strong><br>${infoText}`;
+          infoElement.style.display = 'block';
+          break; // Once the first intersected object is handled, exit the loop
       }
-  });
+  }
+
+  // If no intersections are found, hide the information box
+  if (intersects.length === 0) {
+      infoElement.style.display = 'none';
+  }
 }
 
+window.addEventListener('click', onMouseClick, false);
 
-// Render loop
+
+// Continue with the existing animate function
 function animate() {
-    requestAnimationFrame(animate);
-    updatePlanetaryOrbits();  // Update positions in the orbit
-    renderer.render(scene, camera);
-    controls.update(); // only required if controls.enableDamping = true
+  requestAnimationFrame(animate);
+  updatePlanetaryOrbits();  // Continue updating positions in the orbit
+  renderer.render(scene, camera);
+  controls.update();
 }
+
 animate();
