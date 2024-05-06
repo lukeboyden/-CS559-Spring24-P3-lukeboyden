@@ -92,18 +92,51 @@ function updatePlanetaryOrbits() {
   });
 }
 
+// Add event listener for mouse clicks
+renderer.domElement.addEventListener('click', onDocumentMouseDown, false);
 
-// HTML element for displaying information
-//const infoElement = document.createElement('div');
+function onDocumentMouseDown(event) {
+    event.preventDefault();
+
+    // Calculate mouse position in normalized device coordinates (-1 to +1)
+    const rect = renderer.domElement.getBoundingClientRect();
+    const mouse = new THREE.Vector2();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    // Update and display information for the clicked planet
+    let foundPlanet = false;
+    celestialBodies.forEach(planet => {
+        const vector = planet.position.clone().project(camera);
+        // Check if the mouse click is near the planet's position
+        if (Math.abs(mouse.x - vector.x) < 0.05 && Math.abs(mouse.y - vector.y) < 0.05) {
+            showPlanetInfo(planet.name);
+            foundPlanet = true;
+        }
+    });
+
+    if (!foundPlanet) {
+        infoElement.style.display = 'none';
+    }
+}
+
+function showPlanetInfo(name) {
+    const description = getDescription(name);
+    infoElement.innerHTML = `<strong>${name}</strong><br>${description}`;
+    infoElement.style.display = 'block';
+}
+
+// Styling for the information display box
 infoElement.style.position = 'absolute';
 infoElement.style.top = '10px';
-infoElement.style.left = '10px';
+infoElement.style.right = '10px';
+infoElement.style.width = '300px';
+infoElement.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
 infoElement.style.color = 'white';
-infoElement.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-infoElement.style.border = '1px solid #fff';
 infoElement.style.padding = '10px';
-infoElement.style.display = 'none';
-document.body.appendChild(infoElement);
+infoElement.style.borderRadius = '5px';
+infoElement.style.display = 'none';  // Start hidden
+
 
 
 // Descriptions for celestial bodies
@@ -131,43 +164,6 @@ function getDescription(name) {
             return 'No information available.';
     }
 }
-
-// Raycaster setup
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-
-function onMouseClick(event) {
-  // Update the mouse position with the normalized coordinates of the mouse position
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-  // Update the picking ray with the camera and mouse position
-  raycaster.setFromCamera(mouse, camera);
-
-  // Calculate objects intersecting the picking ray
-  const intersects = raycaster.intersectObjects(celestialBodies);
-
-  // Iterate through the array of intersected objects
-  for (let i = 0; i < intersects.length; i++) {
-      const intersectedObject = intersects[i].object;
-
-      // Display the information box if a celestial body is clicked
-      if (intersectedObject) {
-          const infoText = getDescription(intersectedObject.name);
-          infoElement.innerHTML = `<strong>${intersectedObject.name}</strong><br>${infoText}`;
-          infoElement.style.display = 'block';
-          break; // Once the first intersected object is handled, exit the loop
-      }
-  }
-
-  // If no intersections are found, hide the information box
-  if (intersects.length === 0) {
-      infoElement.style.display = 'none';
-  }
-}
-
-window.addEventListener('click', onMouseClick, false);
-
 
 // Continue with the existing animate function
 function animate() {
