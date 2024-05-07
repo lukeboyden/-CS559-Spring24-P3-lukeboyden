@@ -46,7 +46,7 @@ scene.add(sun);
 celestialBodies.push(sun); // Add Sun to the celestial bodies array
 
 // Sunlight as a point light
-const pointLight = new THREE.PointLight(0xffffff, 1.5, 0);
+const pointLight = new THREE.PointLight(0xffffff, 5, 0);
 sun.add(pointLight);
 
 // Astronomical unit and scaling function for distances
