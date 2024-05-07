@@ -2,18 +2,18 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../libs/CS559-Three/examples/jsm/controls/OrbitControls.js';
 
-const infoElement = document.createElement('div');
-infoElement.id = 'infoCard';  // Use the new CSS styles
-document.body.appendChild(infoElement);
-
 // Scene, camera, and renderer setup
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1e8);
 camera.position.z = 40;
-
 const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(1920, 1080);
 document.body.appendChild(renderer.domElement);
+
+// Controls for user interaction
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
 
 // Ambient light
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // Soft white light
@@ -73,58 +73,14 @@ planetsData.forEach(planet => {
     }
     animatePlanet();
 });
-// Controls for user interaction
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-
-// Function to update planetary positions for orbits
-function updatePlanetaryOrbits() {
-  const currentTime = Date.now() * 0.0001;  // Current time factor for animation speed
-
-  planetsData.forEach((planet, index) => {
-      const planetMesh = scene.children.find(obj => obj.name === planet.name);
-      if (planetMesh) {
-          // Circular orbit calculation
-          planetMesh.position.x = Math.cos(currentTime * planet.orbitalSpeed) * scaleDistance(planet.distance);
-          planetMesh.position.z = Math.sin(currentTime * planet.orbitalSpeed) * scaleDistance(planet.distance);
-      }
-  });
-}
 
 // Add event listener for mouse clicks
 renderer.domElement.addEventListener('click', onDocumentMouseDown, false);
 
-function onDocumentMouseDown(event) {
-    event.preventDefault();
-
-    // Calculate mouse position in normalized device coordinates (-1 to +1)
-    const rect = renderer.domElement.getBoundingClientRect();
-    const mouse = new THREE.Vector2();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    // Update and display information for the clicked planet
-    let foundPlanet = false;
-    celestialBodies.forEach(planet => {
-        const vector = planet.position.clone().project(camera);
-        // Check if the mouse click is near the planet's position
-        if (Math.abs(mouse.x - vector.x) < 0.05 && Math.abs(mouse.y - vector.y) < 0.05) {
-            showPlanetInfo(planet.name);
-            foundPlanet = true;
-        }
-    });
-
-    if (!foundPlanet) {
-        infoElement.style.display = 'none';
-    }
-}
-
-function showPlanetInfo(name) {
-    const description = getDescription(name);
-    infoElement.innerHTML = `<strong>${name}</strong><br>${description}`;
-    infoElement.style.display = 'block';
-}
+// UI component to display information about planets
+const infoElement = document.createElement('div');
+infoElement.id = 'infoCard';  // Use the new CSS styles
+document.body.appendChild(infoElement);
 
 // Styling for the information display box
 infoElement.style.position = 'absolute';
@@ -137,9 +93,81 @@ infoElement.style.padding = '10px';
 infoElement.style.borderRadius = '5px';
 infoElement.style.display = 'none';  // Start hidden
 
+/**
+ * Handles the animation of planetary rotation and orbit. It recursively calls itself
+ * to continuously update the position and rotation of a planet based on real-time.
+ * This function is defined within the forEach loop to capture each planetMesh instance.
+ */
+function animatePlanet() {
+    requestAnimationFrame(animatePlanet);
+    // Simulate axial rotation
+    planetMesh.rotation.y += 0.001;
+    // Calculate and update position for orbital movement
+    planetMesh.position.x = Math.cos(Date.now() * 0.0001 * planet.orbitalSpeed) * scaleDistance(planet.distance);
+    planetMesh.position.z = Math.sin(Date.now() * 0.0001 * planet.orbitalSpeed) * scaleDistance(planet.distance);
+}
 
+/**
+ * Handles mouse click events on the renderer's DOM element to detect if a celestial body was clicked.
+ * It calculates the mouse's position in normalized device coordinates and checks against the positions of planets.
+ * @param {MouseEvent} event - The mouse event object.
+ */
+function onDocumentMouseDown(event) {
+    event.preventDefault();
+    // Calculate mouse position in normalized device coordinates (-1 to +1)
+    const rect = renderer.domElement.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -((event.clientY - rect.top) / rect.height) * 2 + 1
+    );
+    // Identify and display information if a celestial body is clicked
+    let foundPlanet = false;
+    celestialBodies.forEach(planet => {
+        const vector = planet.position.clone().project(camera);
+        if (Math.abs(mouse.x - vector.x) < 0.05 && Math.abs(mouse.y - vector.y) < 0.05) {
+            showPlanetInfo(planet.name);
+            foundPlanet = true;
+        }
+    });
+    // Hide the information element if no planet is found
+    if (!foundPlanet) {
+        infoElement.style.display = 'none';
+    }
+}
 
-// Descriptions for celestial bodies
+/**
+ * Displays the information box with details about the planet.
+ * This includes calling `getDescription` to fetch the descriptive text.
+ * @param {string} name - The name of the planet.
+ */
+function showPlanetInfo(name) {
+    const description = getDescription(name);
+    infoElement.innerHTML = `<strong>${name}</strong><br>${description}`;
+    infoElement.style.display = 'block';
+}
+
+/**
+ * Updates the positions of all planets in their orbits based on the current time.
+ * This function is part of the main animation loop to continuously update each planet's position.
+ */
+function updatePlanetaryOrbits() {
+    const currentTime = Date.now() * 0.0001;  // Current time factor for animation speed
+    planetsData.forEach(planet => {
+        const planetMesh = scene.children.find(obj => obj.name === planet.name);
+        if (planetMesh) {
+            // Calculate and update position for circular orbits
+            planetMesh.position.x = Math.cos(currentTime * planet.orbitalSpeed) * scaleDistance(planet.distance);
+            planetMesh.position.z = Math.sin(currentTime * planet.orbitalSpeed) * scaleDistance(planet.distance);
+        }
+    });
+}
+
+/**
+ * Retrieves a descriptive text for a celestial body based on its name.
+ * It provides educational content about each body displayed in the 3D scene.
+ * @param {string} name - The name of the celestial body.
+ * @return {string} - Description of the celestial body.
+ */
 function getDescription(name) {
     switch (name) {
         case 'Sun':
@@ -165,12 +193,15 @@ function getDescription(name) {
     }
 }
 
-// Continue with the existing animate function
+/**
+ * The main animation loop function that is called recursively to update the scene.
+ * It handles the rendering of the scene, updates the camera controls, and updates planetary orbits.
+ */
 function animate() {
-  requestAnimationFrame(animate);
-  updatePlanetaryOrbits();  // Continue updating positions in the orbit
-  renderer.render(scene, camera);
-  controls.update();
+    requestAnimationFrame(animate);
+    updatePlanetaryOrbits();  // Continue updating positions in the orbit
+    renderer.render(scene, camera);
+    controls.update();
 }
 
-animate();
+animate(); // Initiate the animation loop
