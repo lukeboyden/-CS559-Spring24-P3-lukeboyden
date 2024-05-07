@@ -15,6 +15,22 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 
+// UI component to display information about planets
+const infoElement = document.createElement('div');
+infoElement.id = 'infoCard';  // Use the new CSS styles
+document.body.appendChild(infoElement);
+
+// Styling for the information display box
+infoElement.style.position = 'absolute';
+infoElement.style.top = '10px';
+infoElement.style.right = '10px';
+infoElement.style.width = '300px';
+infoElement.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+infoElement.style.color = 'white';
+infoElement.style.padding = '10px';
+infoElement.style.borderRadius = '5px';
+infoElement.style.display = 'none';  // Start hidden
+
 // Ambient light
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // Soft white light
 scene.add(ambientLight);
@@ -33,78 +49,52 @@ celestialBodies.push(sun); // Add Sun to the celestial bodies array
 const pointLight = new THREE.PointLight(0xffffff, 1.5, 0);
 sun.add(pointLight);
 
-// Load texture function
-const loadTexture = path => new THREE.TextureLoader().load(path);
-
 // Astronomical unit and scaling function for distances
 const astronomicalUnit = 149597870.7; // in thousands of kilometers
 const scaleDistance = distance => (distance / astronomicalUnit) * 10; // scale factor for scene size
 
 // Planetary data
 const planetsData = [
-    { name: "Mercury", diameter: 4879, distance: 57900000, orbitalSpeed: 0.00474, texture: "textures/mercury.jpg" },
-    { name: "Venus", diameter: 12104, distance: 108200000, orbitalSpeed: 0.00350, texture: "textures/venus.jpg" },
-    { name: "Earth", diameter: 12756, distance: 149600000, orbitalSpeed: 0.00298, texture: "textures/earth.jpg" },
-    { name: "Mars", diameter: 6792, distance: 227900000, orbitalSpeed: 0.00241, texture: "textures/mars.jpg" },
-    { name: "Jupiter", diameter: 142984 / 3, distance: 778600000, orbitalSpeed: 0.00131, texture: "textures/jupiter.jpg" },
-    { name: "Saturn", diameter: 120536 / 3, distance: 1433500000, orbitalSpeed: 0.00097, texture: "textures/saturn.jpg" },
-    { name: "Uranus", diameter: 51118, distance: 2872500000, orbitalSpeed: 0.00068, texture: "textures/uranus.jpg" },
-    { name: "Neptune", diameter: 49528, distance: 4495100000, orbitalSpeed: 0.00054, texture: "textures/neptune.jpg" }
+  { name: "Mercury", semiMajorAxis: 2, eccentricity: 0.2056, orbitalSpeed: 0.024, diameter: 4879, distance: 57900000, texture: "textures/mercury.jpg", rotationalSpeed: 10.89 },
+  { name: "Venus", semiMajorAxis: 3, eccentricity: 0.0067, orbitalSpeed: 0.012, diameter: 12104, distance: 108200000, texture: "textures/venus.jpg", rotationalSpeed: -6.52}, //Venus is in retrograde and spins very slowly
+  { name: "Earth", semiMajorAxis: 4, eccentricity: 0.0167, orbitalSpeed: 0.010, diameter: 12756, distance: 149600000, texture: "textures/earth.jpg", rotationalSpeed: 1674.4 },
+  { name: "Mars", semiMajorAxis: 5, eccentricity: 0.0934, orbitalSpeed: 0.008, diameter: 6792, distance: 227900000, texture: "textures/mars.jpg", rotationalSpeed: 866.8 },
+  { name: "Jupiter", semiMajorAxis: 10, eccentricity: 0.0489, orbitalSpeed: 0.00131, diameter: 142984 / 3, distance: 778600000, texture: "textures/jupiter.jpg", rotationalSpeed: 45583 / 9 },
+  { name: "Saturn", semiMajorAxis: 15, eccentricity: 0.0565, orbitalSpeed: 0.00097, diameter: 120536 / 3, distance: 1433500000, texture: "textures/saturn.jpg", rotationalSpeed: 36840 / 3},
+  { name: "Uranus", semiMajorAxis: 20, eccentricity: 0.0457, orbitalSpeed: 0.00068, diameter: 51118, distance: 2872500000, texture: "textures/uranus.jpg", rotationalSpeed: 14794 },
+  { name: "Neptune", semiMajorAxis: 30, eccentricity: 0.0113, orbitalSpeed: 0.00054, diameter: 49528, distance: 4495100000, texture: "textures/neptune.jpg", rotationalSpeed: 9719 }
 ];
 
-// Create planets and add them to interactiveObjects
-planetsData.forEach(planet => {
-    const geometry = new THREE.SphereGeometry(planet.diameter / 12756 * 0.5, 32, 32); // Scale planets
-    const material = new THREE.MeshPhongMaterial({
-        map: loadTexture(planet.texture)
-    });
-    const planetMesh = new THREE.Mesh(geometry, material);
-    planetMesh.name = planet.name;  // Important for identification in raycaster
-    planetMesh.position.x = scaleDistance(planet.distance); // Position planets
-    scene.add(planetMesh);
-    celestialBodies.push(planetMesh); // Add each planet to the celestial bodies array
 
-    // Orbital motion
-    function animatePlanet() {
-        requestAnimationFrame(animatePlanet);
-        planetMesh.rotation.y += 0.001; // Axial rotation
-        planetMesh.position.x = Math.cos(Date.now() * 0.0001 * planet.orbitalSpeed) * scaleDistance(planet.distance);
-        planetMesh.position.z = Math.sin(Date.now() * 0.0001 * planet.orbitalSpeed) * scaleDistance(planet.distance);
-    }
-    animatePlanet();
+// Create planets and animate them
+planetsData.forEach(planet => {
+  const geometry = new THREE.SphereGeometry(0.1 * planet.semiMajorAxis, 32, 32); // Scale planets visually
+  const material = new THREE.MeshPhongMaterial({ map: new THREE.TextureLoader().load(planet.texture) });
+  const planetMesh = new THREE.Mesh(geometry, material);
+  planetMesh.name = planet.name;
+  planetMesh.position.x = planet.distance / 149597870.7 * 10; // Scaling distance
+  scene.add(planetMesh);
+  celestialBodies.push(planetMesh); // Add to celestial bodies array for potential interactions
+
+  // Animate planet using Kepler's laws
+  function animatePlanet() {
+      requestAnimationFrame(animatePlanet);
+      const time = Date.now() * 0.0001;  //<-- Adjust time to see planets orbit
+      const position = getPositionAtTime(time, planet.semiMajorAxis, planet.eccentricity, planet.orbitalSpeed);
+      planetMesh.position.set(position.x, position.y, 0);
+  }
+
+  animatePlanet();
 });
 
 // Add event listener for mouse clicks
 renderer.domElement.addEventListener('click', onDocumentMouseDown, false);
 
-// UI component to display information about planets
-const infoElement = document.createElement('div');
-infoElement.id = 'infoCard';  // Use the new CSS styles
-document.body.appendChild(infoElement);
-
-// Styling for the information display box
-infoElement.style.position = 'absolute';
-infoElement.style.top = '10px';
-infoElement.style.right = '10px';
-infoElement.style.width = '300px';
-infoElement.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-infoElement.style.color = 'white';
-infoElement.style.padding = '10px';
-infoElement.style.borderRadius = '5px';
-infoElement.style.display = 'none';  // Start hidden
-
-/**
- * Handles the animation of planetary rotation and orbit. It recursively calls itself
- * to continuously update the position and rotation of a planet based on real-time.
- * This function is defined within the forEach loop to capture each planetMesh instance.
- */
-function animatePlanet() {
-    requestAnimationFrame(animatePlanet);
-    // Simulate axial rotation
-    planetMesh.rotation.y += 0.001;
-    // Calculate and update position for orbital movement
-    planetMesh.position.x = Math.cos(Date.now() * 0.0001 * planet.orbitalSpeed) * scaleDistance(planet.distance);
-    planetMesh.position.z = Math.sin(Date.now() * 0.0001 * planet.orbitalSpeed) * scaleDistance(planet.distance);
+// Function to calculate position using Kepler's laws for any planet
+function getPositionAtTime(t, semiMajorAxis, eccentricity, speed) {
+  const theta = t * speed; // Adjust theta by orbital speed to simulate time progression
+  const r = semiMajorAxis * (1 - eccentricity ** 2) / (1 + eccentricity * Math.cos(theta));
+  return new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta), 0);
 }
 
 /**
@@ -158,6 +148,8 @@ function updatePlanetaryOrbits() {
             // Calculate and update position for circular orbits
             planetMesh.position.x = Math.cos(currentTime * planet.orbitalSpeed) * scaleDistance(planet.distance);
             planetMesh.position.z = Math.sin(currentTime * planet.orbitalSpeed) * scaleDistance(planet.distance);
+            // Update rotation about its own axis
+           planetMesh.rotation.y += planet.rotationalSpeed * 0.000001;
         }
     });
 }
