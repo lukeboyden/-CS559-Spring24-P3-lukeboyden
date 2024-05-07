@@ -59,8 +59,8 @@ const planetsData = [
   { name: "Venus", semiMajorAxis: 3, eccentricity: 0.0067, orbitalSpeed: 0.012, diameter: 12104, distance: 108200000, texture: "textures/venus.jpg", rotationalSpeed: -6.52}, //Venus is in retrograde and spins very slowly
   { name: "Earth", semiMajorAxis: 4, eccentricity: 0.0167, orbitalSpeed: 0.010, diameter: 12756, distance: 149600000, texture: "textures/earth.jpg", rotationalSpeed: 1674.4 },
   { name: "Mars", semiMajorAxis: 5, eccentricity: 0.0934, orbitalSpeed: 0.008, diameter: 6792, distance: 227900000, texture: "textures/mars.jpg", rotationalSpeed: 866.8 },
-  { name: "Jupiter", semiMajorAxis: 10, eccentricity: 0.0489, orbitalSpeed: 0.00131, diameter: 142984 / 3, distance: 778600000, texture: "textures/jupiter.jpg", rotationalSpeed: 45583 / 9 },
-  { name: "Saturn", semiMajorAxis: 15, eccentricity: 0.0565, orbitalSpeed: 0.00097, diameter: 120536 / 3, distance: 1433500000, texture: "textures/saturn.jpg", rotationalSpeed: 36840 / 3},
+  { name: "Jupiter", semiMajorAxis: 10, eccentricity: 0.0489, orbitalSpeed: 0.00131, diameter: 142984 / 3, distance: 778600000, texture: "textures/jupiter.jpg", rotationalSpeed: 45583 / 9 }, //Divided for scaling
+  { name: "Saturn", semiMajorAxis: 15, eccentricity: 0.0565, orbitalSpeed: 0.00097, diameter: 120536 / 3, distance: 1433500000, texture: "textures/saturn.jpg", rotationalSpeed: 36840 / 3}, //Divided for scaling
   { name: "Uranus", semiMajorAxis: 20, eccentricity: 0.0457, orbitalSpeed: 0.00068, diameter: 51118, distance: 2872500000, texture: "textures/uranus.jpg", rotationalSpeed: 14794 },
   { name: "Neptune", semiMajorAxis: 30, eccentricity: 0.0113, orbitalSpeed: 0.00054, diameter: 49528, distance: 4495100000, texture: "textures/neptune.jpg", rotationalSpeed: 9719 }
 ];
