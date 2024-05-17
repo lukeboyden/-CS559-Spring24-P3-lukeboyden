@@ -1,29 +1,25 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <link rel="stylesheet" href="../libs/CS559/style559.css" />
-  </head>
-=
-  <body>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #infoCard { position: absolute; top: 10px; right: 10px; width: 300px; background-color: rgba(0, 0, 0, 0.8); color: white; padding: 10px; border-radius: 5px; display: none; }
+        #speedControl { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 300px; }
+    </style>
+</head>
+<body>
     <div id="div1"></div>
-<script type="importmap">
-      {
-          "imports": {
-              "three": "../libs/CS559-Three/build/three.module.js"
-          }
-      }
-  </script>
-    <script src="gr-01-01.js" type="module"></script>
-<!-- The screenshot and record buttons -->
-    <br><button onclick="screenshot('canvas')">Screenshot</button> <button
-        onclick="record('canvas','time')">Record</button> <input id="time" type="text" size="2" value="10"> seconds.
-    <script type="module">
-        import { screenshot, record } from "../libs/CS559/saveCanvas.js";
-        window.screenshot = screenshot;
-        window.record = record;
+    <div id="infoCard"></div>
+    <input type="range" id="speedControl" min="1" max="2000.0" step="1" value="1.0">
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "../libs/CS559-Three/build/three.module.js"
+            }
+        }
     </script>
-  </body>
-
-  
+    <script src="gr-01-01.js" type="module"></script>
+</body>
 </html>
-
